@@ -12,6 +12,9 @@ class SignUpdateResult {
 }
 
 SignUpdateResult signUpdate(List<String> args) {
+  if (args.isEmpty) {
+    throw ArgumentError('An update artifact path is required.');
+  }
   String executable = Platform.isMacOS
       ? '${Directory.current.path}/macos/Pods/Sparkle/bin/sign_update'
       : p.joinAll(
@@ -47,15 +50,19 @@ SignUpdateResult signUpdate(List<String> args) {
     signUpdateOutput = processResult.stdout.toString();
     if (Platform.isWindows) {
       signUpdateOutput = signUpdateOutput.replaceFirst('\r\n', '').trim();
-      signUpdateOutput = 'sparkle:dsaSignature="$signUpdateOutput" length="0"';
+      final length = File(args.first).lengthSync();
+      signUpdateOutput =
+          'sparkle:dsaSignature="$signUpdateOutput" length="$length"';
     }
     stdout.write(signUpdateOutput);
   } else {
     stderr.write(processResult.stderr);
+    throw ProcessException(
+        executable, arguments, 'Failed to sign update', exitCode);
   }
 
   RegExp regex = RegExp(r'sparkle:(dsa|ed)Signature="([^"]+)" length="(\d+)"');
-  RegExpMatch? match = regex.firstMatch(signUpdateOutput!);
+  RegExpMatch? match = regex.firstMatch(signUpdateOutput);
 
   if (match == null) {
     throw Exception('Failed to sign update');

@@ -58,7 +58,11 @@ SignUpdateResult signUpdate(List<String> args) {
   } else {
     stderr.write(processResult.stderr);
     throw ProcessException(
-        executable, arguments, 'Failed to sign update', exitCode);
+      executable,
+      arguments,
+      'Failed to sign update',
+      exitCode,
+    );
   }
 
   RegExp regex = RegExp(r'sparkle:(dsa|ed)Signature="([^"]+)" length="(\d+)"');

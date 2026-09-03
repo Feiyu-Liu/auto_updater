@@ -15,9 +15,21 @@ environment:
   flutter: ">=3.3.0"
 
 dependencies:
-  auto_updater_macos: ^1.0.0
-  auto_updater_platform_interface: ^1.0.0
-  auto_updater_windows: ^1.0.0
+  auto_updater_macos:
+    git:
+      url: https://github.com/Feiyu-Liu/auto_updater.git
+      ref: 98a273c66559fbc07824b6f867a12e5fcce215de
+      path: packages/auto_updater_macos
+  auto_updater_platform_interface:
+    git:
+      url: https://github.com/Feiyu-Liu/auto_updater.git
+      ref: 98a273c66559fbc07824b6f867a12e5fcce215de
+      path: packages/auto_updater_platform_interface
+  auto_updater_windows:
+    git:
+      url: https://github.com/Feiyu-Liu/auto_updater.git
+      ref: 98a273c66559fbc07824b6f867a12e5fcce215de
+      path: packages/auto_updater_windows
   flutter:
     sdk: flutter
   json_annotation: ^4.8.0

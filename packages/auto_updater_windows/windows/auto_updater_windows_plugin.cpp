@@ -49,9 +49,20 @@ void AutoUpdaterWindowsPlugin::RegisterWithRegistrar(
 AutoUpdaterWindowsPlugin::AutoUpdaterWindowsPlugin(
     flutter::PluginRegistrarWindows* registrar) {
   registrar_ = registrar;
+  if (auto* view = registrar_->GetView()) {
+    auto_updater.SetPlatformWindow(view->GetNativeWindow());
+    window_proc_delegate_id_ = registrar_->RegisterTopLevelWindowProcDelegate(
+        [this](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+          return HandleWindowMessage(hwnd, message, wparam, lparam);
+        });
+  }
 }
 
-AutoUpdaterWindowsPlugin::~AutoUpdaterWindowsPlugin() {}
+AutoUpdaterWindowsPlugin::~AutoUpdaterWindowsPlugin() {
+  if (window_proc_delegate_id_ != 0) {
+    registrar_->UnregisterTopLevelWindowProcDelegate(window_proc_delegate_id_);
+  }
+}
 
 void AutoUpdaterWindowsPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue>& method_call,
@@ -64,7 +75,6 @@ void AutoUpdaterWindowsPlugin::HandleMethodCall(
     std::string feedURL =
         std::get<std::string>(args.at(flutter::EncodableValue("feedURL")));
     auto_updater.SetFeedURL(feedURL);
-    auto_updater.RegisterEventSink(std::move(event_sink_));
     result->Success(flutter::EncodableValue(true));
 
   } else if (method_name.compare("checkForUpdates") == 0) {
@@ -95,14 +105,26 @@ std::unique_ptr<flutter::StreamHandlerError<flutter::EncodableValue>>
 AutoUpdaterWindowsPlugin::OnListenInternal(
     const flutter::EncodableValue* arguments,
     std::unique_ptr<flutter::EventSink<flutter::EncodableValue>>&& events) {
-  event_sink_ = std::move(events);
+  auto_updater.RegisterEventSink(std::move(events));
   return nullptr;
 }
 
 std::unique_ptr<flutter::StreamHandlerError<flutter::EncodableValue>>
 AutoUpdaterWindowsPlugin::OnCancelInternal(
     const flutter::EncodableValue* arguments) {
-  event_sink_ = nullptr;
+  auto_updater.RegisterEventSink(nullptr);
   return nullptr;
+}
+
+std::optional<LRESULT> AutoUpdaterWindowsPlugin::HandleWindowMessage(
+    HWND hwnd,
+    UINT message,
+    WPARAM wparam,
+    LPARAM lparam) {
+  if (auto_updater.HandlePlatformMessage(message) == 0 &&
+      message == WM_APP + 0x4A) {
+    return 0;
+  }
+  return std::nullopt;
 }
 }  // namespace auto_updater_windows

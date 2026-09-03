@@ -40,45 +40,56 @@ extension SUAppcastItem {
 }
 
 public class AutoUpdater: NSObject, SPUUpdaterDelegate {
-    var _userDriver: SPUStandardUserDriver?
-    var _updater: SPUUpdater?
-    var feedURL: URL?
+    private var userDriver: SPUStandardUserDriver?
+    private var updater: SPUUpdater?
+    private var feedURL: URL?
+    private var hasStarted = false
     public var onEvent:((String, NSDictionary) -> Void)?
     
     override init() {
         super.init()
         let hostBundle: Bundle = Bundle.main
         
-        _userDriver = SPUStandardUserDriver(hostBundle: hostBundle, delegate: nil)
-        _updater = SPUUpdater(
+        userDriver = SPUStandardUserDriver(hostBundle: hostBundle, delegate: nil)
+        updater = SPUUpdater(
             hostBundle: hostBundle,
             applicationBundle: hostBundle,
-            userDriver: _userDriver!,
+            userDriver: userDriver!,
             delegate: self
         )
-        _updater?.clearFeedURLFromUserDefaults()
-        try? _updater?.start()
     }
     
     public func feedURLString(for updater: SPUUpdater) -> String? {
         return feedURL?.absoluteString
     }
 
-    public func setFeedURL(_ feedURL: URL?) {
+    public func setFeedURL(_ feedURL: URL?) throws {
+        guard let feedURL else {
+            throw NSError(domain: "auto_updater", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "The update feed URL is missing."
+            ])
+        }
         self.feedURL = feedURL
-        try? _updater?.start()
+        guard !hasStarted else { return }
+        guard let updater else {
+            throw NSError(domain: "auto_updater", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: "The updater is unavailable."
+            ])
+        }
+        try updater.start()
+        hasStarted = true
     }
     
     public func checkForUpdates() {
-        _updater?.checkForUpdates()
+        updater?.checkForUpdates()
     }
     
     public func checkForUpdatesInBackground() {
-        _updater?.checkForUpdatesInBackground()
+        updater?.checkForUpdatesInBackground()
     }
     
     public func setScheduledCheckInterval(_ interval: Int) {
-        _updater?.updateCheckInterval = TimeInterval(interval)
+        updater?.updateCheckInterval = TimeInterval(interval)
     }
     
     // SPUUpdaterDelegate
@@ -127,8 +138,19 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
     }
     
     public func _emitEvent(_ eventName: String, _ data: NSDictionary) {
-        if (onEvent != nil) {
-            onEvent!(eventName, data)
+        let emit = { [weak self] in
+            guard let self, let onEvent = self.onEvent else { return }
+            onEvent(eventName, data)
         }
+        if Thread.isMainThread {
+            emit()
+        } else {
+            DispatchQueue.main.async(execute: emit)
+        }
+    }
+
+    deinit {
+        updater = nil
+        userDriver = nil
     }
 }

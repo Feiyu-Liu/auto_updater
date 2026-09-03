@@ -40,9 +40,17 @@ public class AutoUpdaterMacosPlugin: NSObject, FlutterPlugin,FlutterStreamHandle
         
         switch call.method {
         case "setFeedURL":
-            let feedURL = URL(string: args["feedURL"] as! String)
-            autoUpdater.setFeedURL(feedURL)
-            result(true)
+            guard let feedURLString = args["feedURL"] as? String,
+                  let feedURL = URL(string: feedURLString) else {
+                result(FlutterError(code: "invalid_feed_url", message: "The update feed URL is invalid.", details: nil))
+                break
+            }
+            do {
+                try autoUpdater.setFeedURL(feedURL)
+                result(true)
+            } catch {
+                result(FlutterError(code: "updater_start_failed", message: error.localizedDescription, details: nil))
+            }
             break
         case "checkForUpdates":
             let inBackground = args["inBackground"] as! Bool
@@ -63,4 +71,3 @@ public class AutoUpdaterMacosPlugin: NSObject, FlutterPlugin,FlutterStreamHandle
         }
     }
 }
-

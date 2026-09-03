@@ -17,8 +17,8 @@ class AutoUpdaterWindowsPlugin
       flutter::StreamHandler<flutter::EncodableValue> {
  private:
   flutter::PluginRegistrarWindows* registrar_;
-  std::unique_ptr<flutter::EventSink<flutter::EncodableValue>> event_sink_;
   AutoUpdater auto_updater = AutoUpdater();
+  int window_proc_delegate_id_ = 0;
 
  public:
   static void RegisterWithRegistrar(flutter::PluginRegistrarWindows* registrar);
@@ -42,6 +42,11 @@ class AutoUpdaterWindowsPlugin
 
   std::unique_ptr<flutter::StreamHandlerError<>> OnCancelInternal(
       const flutter::EncodableValue* arguments) override;
+
+  std::optional<LRESULT> HandleWindowMessage(HWND hwnd,
+                                              UINT message,
+                                              WPARAM wparam,
+                                              LPARAM lparam);
 };
 
 }  // namespace auto_updater_windows

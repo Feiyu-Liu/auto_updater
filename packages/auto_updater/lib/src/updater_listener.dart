@@ -7,4 +7,5 @@ abstract mixin class UpdaterListener {
   void onUpdaterUpdateNotAvailable(UpdaterError? error);
   void onUpdaterUpdateDownloaded(AppcastItem? appcastItem);
   void onUpdaterBeforeQuitForUpdate(AppcastItem? appcastItem);
+  void onUpdaterUpdateCancelled() {}
 }

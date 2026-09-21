@@ -18,6 +18,11 @@ void main() {
     await pumpEventQueue();
 
     expect(listener.cancelled, isTrue);
+
+    platform.emit('update-finished');
+    await pumpEventQueue();
+
+    expect(listener.finished, isTrue);
   });
 }
 
@@ -34,10 +39,16 @@ final class _FakeAutoUpdaterPlatform extends AutoUpdaterPlatform {
 
 final class _RecordingListener with UpdaterListener {
   bool cancelled = false;
+  bool finished = false;
 
   @override
   void onUpdaterUpdateCancelled() {
     cancelled = true;
+  }
+
+  @override
+  void onUpdaterUpdateFinished(UpdaterError? error) {
+    finished = true;
   }
 
   @override

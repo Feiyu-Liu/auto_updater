@@ -121,6 +121,15 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
         ]
         _emitEvent("update-not-available", data)
     }
+
+    public func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
+        _emitEvent("update-not-available", [:])
+    }
+
+    public func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: Error?) {
+        let data: NSDictionary = error.map { ["error": $0.localizedDescription] } ?? [:]
+        _emitEvent("update-finished", data)
+    }
     
     public func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
         let data: NSDictionary = [

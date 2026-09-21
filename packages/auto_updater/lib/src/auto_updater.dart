@@ -64,6 +64,9 @@ class AutoUpdater {
         case 'before-quit-for-update':
           listener.onUpdaterBeforeQuitForUpdate(appcastItem);
           break;
+        case 'update-finished':
+          listener.onUpdaterUpdateFinished(updaterError);
+          break;
         case 'update-cancelled':
           listener.onUpdaterUpdateCancelled();
           break;

@@ -80,12 +80,29 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
         hasStarted = true
     }
     
-    public func checkForUpdates() {
-        updater?.checkForUpdates()
+    public var isStarted: Bool {
+        return hasStarted
     }
-    
-    public func checkForUpdatesInBackground() {
-        updater?.checkForUpdatesInBackground()
+
+    /// Returns "started", "resumed" when Sparkle brings the update already
+    /// being shown into focus instead of starting a check, or "busy" when a
+    /// session in progress rejects the request and no events will follow.
+    public func checkForUpdates() -> String {
+        guard let updater else { return "busy" }
+        if updater.sessionInProgress {
+            guard updater.canCheckForUpdates else { return "busy" }
+            updater.checkForUpdates()
+            return "resumed"
+        }
+        updater.checkForUpdates()
+        return "started"
+    }
+
+    /// Sparkle ignores a background check while a session is in progress.
+    public func checkForUpdatesInBackground() -> String {
+        guard let updater, !updater.sessionInProgress else { return "busy" }
+        updater.checkForUpdatesInBackground()
+        return "started"
     }
     
     public func setScheduledCheckInterval(_ interval: Int) {

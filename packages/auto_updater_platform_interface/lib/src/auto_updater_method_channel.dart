@@ -28,11 +28,21 @@ class MethodChannelAutoUpdater extends AutoUpdaterPlatform {
   }
 
   @override
-  Future<void> checkForUpdates({bool? inBackground}) async {
+  Future<UpdateCheckStart> checkForUpdates({bool? inBackground}) async {
     final Map<String, dynamic> arguments = {
       'inBackground': inBackground ?? false,
     };
-    await methodChannel.invokeMethod('checkForUpdates', arguments);
+    final result = await methodChannel.invokeMethod<Object?>(
+      'checkForUpdates',
+      arguments,
+    );
+    // Native implementations that predate this result reply `true`, which
+    // keeps its old meaning: the check was handed to the native updater.
+    return switch (result) {
+      'resumed' => UpdateCheckStart.resumed,
+      'busy' => UpdateCheckStart.busy,
+      _ => UpdateCheckStart.started,
+    };
   }
 
   @override

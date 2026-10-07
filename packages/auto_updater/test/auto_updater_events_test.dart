@@ -24,13 +24,34 @@ void main() {
 
     expect(listener.finished, isTrue);
   });
+
+  test('returns how the native updater answered a check', () async {
+    final platform = _FakeAutoUpdaterPlatform()
+      ..checkResult = UpdateCheckStart.busy;
+    AutoUpdaterPlatform.instance = platform;
+    addTearDown(platform.dispose);
+
+    expect(
+      await autoUpdater.checkForUpdates(inBackground: true),
+      UpdateCheckStart.busy,
+    );
+    expect(platform.lastInBackground, isTrue);
+  });
 }
 
 final class _FakeAutoUpdaterPlatform extends AutoUpdaterPlatform {
   final _events = StreamController<Map<Object?, Object?>>.broadcast();
+  UpdateCheckStart checkResult = UpdateCheckStart.started;
+  bool? lastInBackground;
 
   @override
   Stream<Map<Object?, Object?>> get sparkleEvents => _events.stream;
+
+  @override
+  Future<UpdateCheckStart> checkForUpdates({bool? inBackground}) async {
+    lastInBackground = inBackground;
+    return checkResult;
+  }
 
   void emit(String type) => _events.add({'type': type});
 

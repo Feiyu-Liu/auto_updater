@@ -18,17 +18,17 @@ dependencies:
   auto_updater_macos:
     git:
       url: https://github.com/Feiyu-Liu/auto_updater.git
-      ref: b76778d
+      ref: 8c4543b
       path: packages/auto_updater_macos
   auto_updater_platform_interface:
     git:
       url: https://github.com/Feiyu-Liu/auto_updater.git
-      ref: b76778d
+      ref: 8c4543b
       path: packages/auto_updater_platform_interface
   auto_updater_windows:
     git:
       url: https://github.com/Feiyu-Liu/auto_updater.git
-      ref: b76778d
+      ref: 8c4543b
       path: packages/auto_updater_windows
   flutter:
     sdk: flutter

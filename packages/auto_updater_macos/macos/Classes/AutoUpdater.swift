@@ -155,14 +155,12 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
         _emitEvent("update-downloaded", data)
     }
     
-    public func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem, immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
-        let data: NSDictionary = [
-            "appcastItem": item.toDictionary()
-        ]
-        _emitEvent("before-quit-for-update", data)
-        return true
-    }
-    
+    // Keep Sparkle's default install-on-quit handling. Returning true from
+    // willInstallUpdateOnQuit takes ownership of the update cycle and stalls
+    // it until the immediate installation handler is called. This plugin uses
+    // the standard native UI, so it must not intercept that callback or report
+    // a scheduled installation as an actual request to quit.
+
     public func _emitEvent(_ eventName: String, _ data: NSDictionary) {
         let emit = { [weak self] in
             guard let self, let onEvent = self.onEvent else { return }

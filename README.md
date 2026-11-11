@@ -82,3 +82,8 @@ Sets the auto update check interval, default 86400, minimum 3600, 0 to disable u
 ## License
 
 [MIT](./LICENSE)
+
+### Explicit Windows comparison version
+
+See [the configuration contract](README-comparison-version.md) for
+`setAppBuildVersion`, initialization ordering, errors, compatibility, and tests.

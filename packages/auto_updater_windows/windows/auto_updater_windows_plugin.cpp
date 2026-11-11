@@ -69,7 +69,9 @@ void AutoUpdaterWindowsPlugin::HandleMethodCall(
     std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
   std::string method_name = method_call.method_name();
 
-  if (method_name.compare("setFeedURL") == 0) {
+  if (method_name == "setAppBuildVersion") {
+    HandleSetAppBuildVersion(auto_updater, method_call.arguments(), *result);
+  } else if (method_name.compare("setFeedURL") == 0) {
     const flutter::EncodableMap& args =
         std::get<flutter::EncodableMap>(*method_call.arguments());
     std::string feedURL =

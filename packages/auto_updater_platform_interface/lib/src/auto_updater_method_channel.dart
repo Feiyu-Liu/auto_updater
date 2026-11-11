@@ -22,6 +22,16 @@ class MethodChannelAutoUpdater extends AutoUpdaterPlatform {
   }
 
   @override
+  Future<void> setAppBuildVersion(String buildVersion) async {
+    if (defaultTargetPlatform != TargetPlatform.windows) {
+      return super.setAppBuildVersion(buildVersion);
+    }
+    await methodChannel.invokeMethod<void>('setAppBuildVersion', {
+      'buildVersion': buildVersion,
+    });
+  }
+
+  @override
   Future<void> setFeedURL(String feedUrl) async {
     final Map<String, dynamic> arguments = {'feedURL': feedUrl};
     await methodChannel.invokeMethod('setFeedURL', arguments);

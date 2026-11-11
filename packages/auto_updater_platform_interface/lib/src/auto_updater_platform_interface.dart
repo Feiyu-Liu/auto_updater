@@ -39,6 +39,16 @@ abstract class AutoUpdaterPlatform extends PlatformInterface {
     throw UnimplementedError('sparkleEvents getter has not been implemented.');
   }
 
+  /// Sets Windows' comparison identity before [setFeedURL] initializes it.
+  ///
+  /// The last pre-initialization call wins. Windows rejects invalid strings
+  /// with `invalid_argument` and changes after initialization with
+  /// `already_initialized`. Omitting this call retains ProductVersion fallback.
+  /// Other platforms throw [UnsupportedError].
+  Future<void> setAppBuildVersion(String buildVersion) async {
+    throw UnsupportedError('Explicit build versions are supported on Windows.');
+  }
+
   /// Sets the url and initialize the auto updater.
   Future<void> setFeedURL(String feedUrl) async {
     throw UnimplementedError('setFeedURL() has not been implemented.');

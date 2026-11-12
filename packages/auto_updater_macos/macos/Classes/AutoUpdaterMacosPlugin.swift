@@ -53,13 +53,16 @@ public class AutoUpdaterMacosPlugin: NSObject, FlutterPlugin,FlutterStreamHandle
             }
             break
         case "checkForUpdates":
-            let inBackground = args["inBackground"] as! Bool
-            if(inBackground) {
-                autoUpdater.checkForUpdatesInBackground()
-            }else {
-                autoUpdater.checkForUpdates()
+            guard autoUpdater.isStarted else {
+                result(FlutterError(code: "updater_not_started", message: "Set the update feed URL before checking for updates.", details: nil))
+                break
             }
-            result(true)
+            let inBackground = args["inBackground"] as? Bool ?? false
+            if(inBackground) {
+                result(autoUpdater.checkForUpdatesInBackground())
+            }else {
+                result(autoUpdater.checkForUpdates())
+            }
             break
         case "setScheduledCheckInterval":
             let interval = args["interval"] as! Int

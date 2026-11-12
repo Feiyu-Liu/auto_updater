@@ -87,7 +87,9 @@ void AutoUpdaterWindowsPlugin::HandleMethodCall(
     } else {
       auto_updater.CheckForUpdates();
     }
-    result->Success(flutter::EncodableValue(true));
+    // WinSparkle exposes no session state, so it cannot report "resumed" or
+    // "busy"; it reuses its own window for a check already in progress.
+    result->Success(flutter::EncodableValue(std::string("started")));
 
   } else if (method_name.compare("setScheduledCheckInterval") == 0) {
     const flutter::EncodableMap& args =

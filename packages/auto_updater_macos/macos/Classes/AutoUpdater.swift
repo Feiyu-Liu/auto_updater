@@ -80,12 +80,29 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
         hasStarted = true
     }
     
-    public func checkForUpdates() {
-        updater?.checkForUpdates()
+    public var isStarted: Bool {
+        return hasStarted
     }
-    
-    public func checkForUpdatesInBackground() {
-        updater?.checkForUpdatesInBackground()
+
+    /// Returns "started", "resumed" when Sparkle brings the update already
+    /// being shown into focus instead of starting a check, or "busy" when a
+    /// session in progress rejects the request and no events will follow.
+    public func checkForUpdates() -> String {
+        guard let updater else { return "busy" }
+        if updater.sessionInProgress {
+            guard updater.canCheckForUpdates else { return "busy" }
+            updater.checkForUpdates()
+            return "resumed"
+        }
+        updater.checkForUpdates()
+        return "started"
+    }
+
+    /// Sparkle ignores a background check while a session is in progress.
+    public func checkForUpdatesInBackground() -> String {
+        guard let updater, !updater.sessionInProgress else { return "busy" }
+        updater.checkForUpdatesInBackground()
+        return "started"
     }
     
     public func setScheduledCheckInterval(_ interval: Int) {
@@ -121,6 +138,15 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
         ]
         _emitEvent("update-not-available", data)
     }
+
+    public func updaterDidNotFindUpdate(_ updater: SPUUpdater) {
+        _emitEvent("update-not-available", [:])
+    }
+
+    public func updater(_ updater: SPUUpdater, didFinishUpdateCycleFor updateCheck: SPUUpdateCheck, error: Error?) {
+        let data: NSDictionary = error.map { ["error": $0.localizedDescription] } ?? [:]
+        _emitEvent("update-finished", data)
+    }
     
     public func updater(_ updater: SPUUpdater, didDownloadUpdate item: SUAppcastItem) {
         let data: NSDictionary = [
@@ -129,14 +155,12 @@ public class AutoUpdater: NSObject, SPUUpdaterDelegate {
         _emitEvent("update-downloaded", data)
     }
     
-    public func updater(_ updater: SPUUpdater, willInstallUpdateOnQuit item: SUAppcastItem, immediateInstallationBlock immediateInstallHandler: @escaping () -> Void) -> Bool {
-        let data: NSDictionary = [
-            "appcastItem": item.toDictionary()
-        ]
-        _emitEvent("before-quit-for-update", data)
-        return true
-    }
-    
+    // Keep Sparkle's default install-on-quit handling. Returning true from
+    // willInstallUpdateOnQuit takes ownership of the update cycle and stalls
+    // it until the immediate installation handler is called. This plugin uses
+    // the standard native UI, so it must not intercept that callback or report
+    // a scheduled installation as an actual request to quit.
+
     public func _emitEvent(_ eventName: String, _ data: NSDictionary) {
         let emit = { [weak self] in
             guard let self, let onEvent = self.onEvent else { return }

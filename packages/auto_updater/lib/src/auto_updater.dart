@@ -64,6 +64,12 @@ class AutoUpdater {
         case 'before-quit-for-update':
           listener.onUpdaterBeforeQuitForUpdate(appcastItem);
           break;
+        case 'update-finished':
+          listener.onUpdaterUpdateFinished(updaterError);
+          break;
+        case 'update-cancelled':
+          listener.onUpdaterUpdateCancelled();
+          break;
       }
     }
   }
@@ -84,7 +90,12 @@ class AutoUpdater {
   }
 
   /// Asks the server whether there is an update. You must call setFeedURL before using this API.
-  Future<void> checkForUpdates({bool? inBackground}) {
+  ///
+  /// Completes with [UpdateCheckStart.busy] when an update session already in
+  /// progress rejected the request, in which case no events follow, and with
+  /// [UpdateCheckStart.resumed] when that session was brought into focus
+  /// instead of starting a new check.
+  Future<UpdateCheckStart> checkForUpdates({bool? inBackground}) {
     return _platform.checkForUpdates(inBackground: inBackground);
   }
 

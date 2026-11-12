@@ -158,7 +158,6 @@ void AutoUpdater::OnWinSparkleEvent(std::string eventName) {
 
 void AutoUpdater::PostWinSparkleEvent(std::string eventName) {
   if (platform_window_ == nullptr) {
-    OnWinSparkleEvent(std::move(eventName));
     return;
   }
   {
@@ -200,7 +199,7 @@ void __onUpdateCancelledCallback() {
   AutoUpdater* autoUpdater = AutoUpdater::GetInstance();
   if (autoUpdater == nullptr)
     return;
-  autoUpdater->PostWinSparkleEvent("updateCancelled");
+  autoUpdater->PostWinSparkleEvent("update-cancelled");
 }
 
 void __onUpdateSkippedCallback() {

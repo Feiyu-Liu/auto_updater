@@ -1,3 +1,7 @@
+## Unreleased - 2026-09-04
+
+* Forward the Windows update-cancelled event to `UpdaterListener`.
+
 ## 1.0.0
 
 * First major release.

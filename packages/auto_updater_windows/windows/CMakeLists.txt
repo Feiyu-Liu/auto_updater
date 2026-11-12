@@ -79,7 +79,6 @@ enable_testing()
 # directly into the test binary rather than using the DLL.
 add_executable(${TEST_RUNNER}
   test/auto_updater_windows_plugin_test.cpp
-  ${PLUGIN_SOURCES}
 )
 apply_standard_settings(${TEST_RUNNER})
 target_include_directories(${TEST_RUNNER} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -94,4 +93,9 @@ add_custom_command(TARGET ${TEST_RUNNER} POST_BUILD
 )
 
 add_test(NAME ${TEST_RUNNER} COMMAND ${TEST_RUNNER})
+add_executable(winsparkle_version_comparator_test
+  test/winsparkle_version_comparator_test.cpp)
+apply_standard_settings(winsparkle_version_comparator_test)
+add_test(NAME winsparkle_version_comparator_test
+  COMMAND winsparkle_version_comparator_test)
 endif()

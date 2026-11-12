@@ -37,12 +37,27 @@ void main() {
     );
     expect(platform.lastInBackground, isTrue);
   });
+
+  test('forwards the installed comparison identity through the facade',
+      () async {
+    final platform = _FakeAutoUpdaterPlatform();
+    AutoUpdaterPlatform.instance = platform;
+    addTearDown(platform.dispose);
+    await autoUpdater.setAppBuildVersion('1.0.7+18');
+    expect(platform.buildVersion, '1.0.7+18');
+  });
 }
 
 final class _FakeAutoUpdaterPlatform extends AutoUpdaterPlatform {
   final _events = StreamController<Map<Object?, Object?>>.broadcast();
   UpdateCheckStart checkResult = UpdateCheckStart.started;
   bool? lastInBackground;
+  String? buildVersion;
+
+  @override
+  Future<void> setAppBuildVersion(String version) async {
+    buildVersion = version;
+  }
 
   @override
   Stream<Map<Object?, Object?>> get sparkleEvents => _events.stream;

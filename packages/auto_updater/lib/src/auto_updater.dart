@@ -84,7 +84,16 @@ class AutoUpdater {
     _listeners.remove(listener);
   }
 
-  /// Sets the url and initialize the auto updater.
+  /// Sets Windows' comparison identity before [setFeedURL] initializes it.
+  ///
+  /// Pass the installed release identity, for example `1.0.7+18`, matching the
+  /// appcast exactly. See [AutoUpdaterPlatform.setAppBuildVersion] for errors,
+  /// legacy fallback, and platform support.
+  Future<void> setAppBuildVersion(String buildVersion) {
+    return _platform.setAppBuildVersion(buildVersion);
+  }
+
+  /// Sets the feed URL and initializes the native updater.
   Future<void> setFeedURL(String feedUrl) {
     return _platform.setFeedURL(feedUrl);
   }

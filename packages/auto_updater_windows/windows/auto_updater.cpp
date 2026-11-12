@@ -29,10 +29,13 @@ class AutoUpdater {
  public:
   static AutoUpdater* GetInstance();
 
-  AutoUpdater();
+  AutoUpdater(void (*initialize)() = win_sparkle_init,
+              void (*set_build_version)(const wchar_t*) = win_sparkle_set_app_build_version,
+              void (*cleanup)() = win_sparkle_cleanup);
 
   virtual ~AutoUpdater();
 
+  const char* SetAppBuildVersion(const std::string& build_version);
   void SetFeedURL(std::string feedURL);
   void CheckForUpdates();
   void CheckForUpdatesWithoutUI();
@@ -54,6 +57,10 @@ class AutoUpdater {
   std::queue<std::string> pending_events_;
   int scheduled_check_interval_ = 0;
   bool initialized_ = false;
+  std::wstring app_build_version_;
+  void (*initialize_)();
+  void (*set_build_version_)(const wchar_t*);
+  void (*cleanup_)();
 };
 
 AutoUpdater* AutoUpdater::lazySingleton = nullptr;
@@ -62,7 +69,12 @@ AutoUpdater* AutoUpdater::GetInstance() {
   return lazySingleton;
 }
 
-AutoUpdater::AutoUpdater() {
+AutoUpdater::AutoUpdater(void (*initialize)(),
+                         void (*set_build_version)(const wchar_t*),
+                         void (*cleanup)())
+    : initialize_(initialize),
+      set_build_version_(set_build_version),
+      cleanup_(cleanup) {
   if (lazySingleton != nullptr) {
     throw std::invalid_argument("AutoUpdater has already been initialized");
   }
@@ -72,12 +84,55 @@ AutoUpdater::AutoUpdater() {
 
 AutoUpdater::~AutoUpdater() {
   if (initialized_) {
-    win_sparkle_cleanup();
+    cleanup_();
     initialized_ = false;
   }
   if (lazySingleton == this) {
     lazySingleton = nullptr;
   }
+}
+
+const char* AutoUpdater::SetAppBuildVersion(const std::string& build_version) {
+  if (initialized_) return "already_initialized";
+  if (build_version.empty() || build_version.find('\0') != std::string::npos) {
+    return "invalid_argument";
+  }
+  const int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
+                                     build_version.data(),
+                                     static_cast<int>(build_version.size()),
+                                     nullptr, 0);
+  if (size == 0) return "invalid_argument";
+  std::wstring wide(size, L'\0');
+  if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, build_version.data(),
+                          static_cast<int>(build_version.size()), wide.data(),
+                          size) == 0) {
+    return "invalid_argument";
+  }
+  app_build_version_ = std::move(wide);
+  return nullptr;
+}
+
+// Validate without throwing std::bad_variant_access or std::out_of_range
+// across Flutter's platform-thread method-channel handler.
+void HandleSetAppBuildVersion(
+    AutoUpdater& updater, const flutter::EncodableValue* arguments,
+    flutter::MethodResult<flutter::EncodableValue>& result) {
+  const auto* args = arguments
+      ? std::get_if<flutter::EncodableMap>(arguments) : nullptr;
+  if (args) {
+    const auto value = args->find(flutter::EncodableValue("buildVersion"));
+    if (value != args->end()) {
+      if (const auto* version = std::get_if<std::string>(&value->second)) {
+        if (const char* error = updater.SetAppBuildVersion(*version)) {
+          result.Error(error, "Build version must be valid and configured before initialization.");
+        } else {
+          result.Success(flutter::EncodableValue(true));
+        }
+        return;
+      }
+    }
+  }
+  result.Error("invalid_argument", "buildVersion must be a non-empty string without NUL.");
 }
 
 void AutoUpdater::SetFeedURL(std::string feedURL) {
@@ -93,7 +148,10 @@ void AutoUpdater::SetFeedURL(std::string feedURL) {
   }
 
   if (!initialized_) {
-    win_sparkle_init();
+    if (!app_build_version_.empty()) {
+      set_build_version_(app_build_version_.c_str());
+    }
+    initialize_();
     initialized_ = true;
   }
 

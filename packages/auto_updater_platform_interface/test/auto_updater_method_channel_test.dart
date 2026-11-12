@@ -1,4 +1,5 @@
 import 'package:auto_updater_platform_interface/auto_updater_platform_interface.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -50,5 +51,47 @@ void main() {
       {'inBackground': true},
       {'inBackground': false},
     ]);
+  });
+
+  test('awaits Windows build identity before initialization', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await platform.setAppBuildVersion('1.0.7+18');
+    await platform.setScheduledCheckInterval(3600);
+    await platform.setFeedURL('https://example.test/appcast.xml');
+    expect(calls.map((call) => call.method), [
+      'setAppBuildVersion',
+      'setScheduledCheckInterval',
+      'setFeedURL',
+    ]);
+    expect(calls.first.arguments, {'buildVersion': '1.0.7+18'});
+  });
+
+  test('preserves native structured build identity errors', () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(platform.methodChannel, (call) async {
+      throw PlatformException(code: 'already_initialized');
+    });
+    expect(
+      platform.setAppBuildVersion('1.0.7+18'),
+      throwsA(
+        isA<PlatformException>()
+            .having((e) => e.code, 'code', 'already_initialized'),
+      ),
+    );
+  });
+
+  test('macOS existing calls remain compatible and setter is unsupported',
+      () async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
+    addTearDown(() => debugDefaultTargetPlatformOverride = null);
+    await expectLater(
+      platform.setAppBuildVersion('1.0.7+18'),
+      throwsUnsupportedError,
+    );
+    await platform.setFeedURL('https://example.test/appcast.xml');
+    expect(calls.map((call) => call.method), ['setFeedURL']);
   });
 }
